@@ -7,6 +7,8 @@ import {
   OneToMany,
   JoinColumn,
   ManyToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './User';
 
@@ -32,4 +34,10 @@ export class Project {
 
   @OneToMany(() => Bug, (bug) => bug.project, { nullable: true })
   bugs: Bug[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

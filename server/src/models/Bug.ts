@@ -8,6 +8,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
 
 export enum Priority {
@@ -60,4 +61,13 @@ export class Bug {
 
   @OneToMany(() => Comment, (comment) => comment.bug, { nullable: true })
   comments: Comment[];
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  closedAt: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reopenedAt: Date | null;
 }

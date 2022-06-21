@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { User } from './User';
 
@@ -27,4 +28,7 @@ export class Comment {
   bug: Bug;
   @Column()
   bugId: string;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }
