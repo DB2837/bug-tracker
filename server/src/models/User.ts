@@ -1,5 +1,6 @@
 import { Bug } from './Bug';
 import { Project } from './Project';
+/* import { Comment } from './Comment'; */
 import {
   Entity,
   Column,
@@ -26,7 +27,7 @@ export class User {
   @Column()
   lastName: string;
 
-  @Column({ default: null, select: false })
+  @Column({ default: null, select: false, type: 'varchar', length: 280 })
   refreshToken: string;
 
   @ManyToMany(() => Project, (project) => project.members, { nullable: true })
@@ -38,4 +39,7 @@ export class User {
 
   @OneToMany(() => Bug, (bug) => bug.createdBy, { nullable: true })
   bugsCreated: Bug[];
+
+  /*  @OneToMany(() => Comment, (comment) => comment.creator, { nullable: true })
+  commentsCreated: Comment[]; */
 }

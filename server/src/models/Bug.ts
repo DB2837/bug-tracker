@@ -25,7 +25,7 @@ export class Bug {
   @Column()
   title: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 550 })
   description: string;
 
   @Column({
@@ -47,17 +47,17 @@ export class Bug {
   @Column()
   createdByUserId: string;
 
-  /* @ManyToOne(() => User, (user) => user)
-  @JoinColumn({ name: 'updatedByUserId' })
-  updatedBy: User;
-  @Column({ type: 'text', nullable: true })
-  updatedByUserId: string; */
-
   @ManyToOne(() => User, (user) => user)
   @JoinColumn({ name: 'closedByUserId' })
   closedBy: User;
   @Column({ type: 'text', nullable: true })
   closedByUserId: string | null;
+
+  @ManyToOne(() => User, (user) => user)
+  @JoinColumn({ name: 'reOpenedByUserId' })
+  reOpenedBy: User;
+  @Column({ type: 'text', nullable: true })
+  reOpenedByUserId: string | null;
 
   @OneToMany(() => Comment, (comment) => comment.bug, { nullable: true })
   comments: Comment[];

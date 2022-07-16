@@ -14,7 +14,7 @@ export class Comment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 550 })
   description: string;
 
   @ManyToOne(() => User, (user) => user)
