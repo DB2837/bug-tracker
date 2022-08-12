@@ -21,3 +21,11 @@ Full stack CRUD app built whit Typescript, React, Node/Express, TypeORM and MySQ
 ![My Image](./screenshots/Screenshot%20from%202022-08-12%2009-50-04.png)
 
 ![My Image](./screenshots/Screenshot%20from%202022-08-12%2009-50-13.png)
+
+![My Image](./screenshots/Screenshot%20from%202022-08-12%2010-32-26.png)
+
+![My Image](./screenshots/Screenshot%20from%202022-08-12%2010-32-23.png)
+
+![My Image](./screenshots/Screenshot%20from%202022-08-12%2010-32-16.png)
+
+![My Image](./screenshots/Screenshot%20from%202022-08-12%2010-32-13.png)
