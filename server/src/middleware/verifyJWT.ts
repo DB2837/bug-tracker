@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const verifyJwt = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization']; //Beaer token: 'Bearer hgid7866h378hd7823...'
+  const authHeader = req.headers['authorization']; //Beaer + token:
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.sendStatus(401);

@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jwt_decode from 'jwt-decode';
-import styled from 'styled-components';
 import { User, Project, TPayload, TModals } from '../../types';
 import useAuth from '../../hooks/useAuth';
 import useCustomFetch from '../../hooks/useCustomFetch';
@@ -14,10 +13,12 @@ import AddProjectModal from '../../components/modals/AddProjectModal';
 import DeleteModal from '../../components/modals/DeleteModal';
 import AddMembersModal from '../../components/modals/AddMembersModal';
 import EditProjectTitle from '../../components/modals/EditTitleModal';
-import { deleteProject } from '../../services/deleteProject';
-
-const getMembersEmails = (project: any) =>
-  project.members.map((member: any) => member.email);
+import { deleteProject } from '../../services/project/deleteProject';
+import { updateProjectMembers } from '../../services/project/updateProjectMembers';
+import { replaceItemInArray } from '../../utils/replaceItemInArray';
+import useFetchData from '../../hooks/useFetchData';
+import Loader from '../../components/Loader';
+import { FlexContainer } from '../../styles/FlexContainer';
 
 type TProps = {
   modals: TModals;
@@ -25,111 +26,145 @@ type TProps = {
   setModals: React.Dispatch<React.SetStateAction<TModals>>;
 };
 
+const urls: string[] = [USER_PROJECTS, '/api/users'];
+
 const Home = ({ modals, setModals }: TProps) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
+  const _fetch = useCustomFetch();
+  const [CRUDLoading, setCRUDloading] = useState<boolean>(false);
+  const { data, loading } = useFetchData(
+    urls,
+    {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        authorization: `Bearer ${auth?.accessToken}`,
+      },
+    },
+    []
+  );
 
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [selectedProjectID, setSelectedProjectID] = useState<string>('');
-  const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
-  const [selectedProjectMembers, setSelectedProjectMembers] = useState<User[]>(
-    []
-  );
-
-  /* const [selectedProject, setSelectedProject] = useState<Project>(
-    {} as Project
-  ); */
-
-  const _fetch = useCustomFetch();
+  const [usersChecked, setUsersChecked] = useState<string[]>([]);
+  const projectRef = useRef<Project>({} as Project);
 
   const pageSize = 6;
   const totalPages = Math.ceil(projects?.length / pageSize);
   const firstSliceIndex = (currentPage - 1) * pageSize;
   const lastSliceIndex = currentPage * pageSize;
 
-  const urls: string[] = [USER_PROJECTS, '/api/users'];
-  const payload: TPayload = jwt_decode(auth?.accessToken as string);
+  const payload: TPayload = useMemo(
+    () => jwt_decode(auth?.accessToken as string),
+    [auth?.accessToken]
+  );
   const currentUserEmail = payload?.email;
 
   useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
+    if (data && data[0] && data[1]) {
+      setProjects(() => data[0]);
+      setUsers(() => data[1]);
+    }
+  }, [data]);
 
-    (async () => {
-      try {
-        const [userProjects, users] = await Promise.all(
-          urls.map((url) =>
-            _fetch(url, {
-              method: 'GET',
-              mode: 'cors',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-                authorization: `Bearer ${auth?.accessToken}`,
-              },
-              signal: signal,
-            }).then((res) => res?.json())
-          )
-        );
-
-        setProjects(userProjects);
-        setUsers(users);
-      } catch (error) {
-        throw error;
-      }
-    })();
-
-    return () => controller.abort();
-  }, []);
-
-  /*  console.log('USERS', users); */
   console.log('render');
 
-  const handleDelete = async (event: React.SyntheticEvent) => {
-    event.stopPropagation();
-    const response = await deleteProject(
-      _fetch,
-      selectedProjectID,
-      auth?.accessToken
-    );
-    setModals((prevState) => ({
-      ...prevState,
-      deleteModal: false,
-    }));
-
-    if (response?.status === 200) {
-      setProjects(
-        projects.filter((project: any) => project.id !== selectedProjectID)
+  const handleDelete = async () => {
+    try {
+      setCRUDloading(true);
+      const response = await deleteProject(
+        _fetch,
+        projectRef.current.id,
+        auth?.accessToken
       );
-      return;
+      setModals((prevState) => ({
+        ...prevState,
+        deleteModal: false,
+      }));
+
+      if (response?.status === 200) {
+        setProjects(
+          projects.filter(
+            (project: any) => project.id !== projectRef.current.id
+          )
+        );
+        return;
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setCRUDloading(false);
+    }
+  };
+
+  const handleUpdateMembers = async () => {
+    try {
+      setCRUDloading(true);
+      const response = await updateProjectMembers(
+        _fetch,
+        projectRef.current.id,
+        usersChecked,
+        auth?.accessToken
+      );
+
+      if (response?.status === 200) {
+        const updatedProject = await response.json();
+
+        setProjects((prevState) => {
+          const newProjectsArray = replaceItemInArray(
+            prevState,
+            projectRef.current.id,
+            updatedProject
+          );
+
+          return newProjectsArray;
+        });
+        setModals((prevState) => ({
+          ...prevState,
+          addMembersModal: false,
+        }));
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setCRUDloading(false);
     }
   };
 
   return (
     <GridContainer>
+      {loading && <Loader />}
+      {CRUDLoading && <Loader />}
+
       {modals.addProjectModal && (
         <AddProjectModal
           adminEmail={currentUserEmail}
+          users={users}
+          CRUDLoading={CRUDLoading}
+          setCRUDloading={setCRUDloading}
           setProjects={setProjects}
           setModals={setModals}
-          users={users}
         />
       )}
 
       {modals.editTitleModal && (
         <EditProjectTitle
           setModals={setModals}
-          setSelectedProjectTitle={setSelectedProjectTitle}
-          projectID={selectedProjectID}
-          customFetch={_fetch}
+          setProjects={setProjects}
+          setCRUDloading={setCRUDloading}
+          CRUDLoading={CRUDLoading}
+          selectedProject={projectRef.current}
         />
       )}
 
       {modals.deleteModal && (
         <DeleteModal
           title='Confirm Delete Project'
+          CRUDLoading={CRUDLoading}
           setModals={setModals}
           handleDelete={handleDelete}
         />
@@ -139,10 +174,12 @@ const Home = ({ modals, setModals }: TProps) => {
         <AddMembersModal
           adminEmail={currentUserEmail}
           users={users}
-          setSelectedProjectMembers={setSelectedProjectMembers}
-          members={selectedProjectMembers}
+          usersChecked={usersChecked}
+          selectedProject={projectRef.current}
+          CRUDLoading={CRUDLoading}
+          setUsersChecked={setUsersChecked}
           setModals={setModals}
-          projectID={selectedProjectID}
+          handleUpdateMembers={handleUpdateMembers}
         />
       )}
 
@@ -163,35 +200,14 @@ const Home = ({ modals, setModals }: TProps) => {
           <FlexContainer>
             {projects
               ?.map((project: any) => {
-                let members = project.members;
-
-                let projectTitle = project.title;
-                /* project cards got rendered the first time whit project fetched info, when i click again on add members, home rerender and 
-need to sync members email whit those setted on the modal*/
-                if (project.id === selectedProjectID) {
-                  members = selectedProjectMembers
-                    ? selectedProjectMembers
-                    : getMembersEmails(project);
-
-                  projectTitle = selectedProjectTitle
-                    ? selectedProjectTitle
-                    : project.title;
-                }
-
                 return (
                   <ProjectCard
-                    title={projectTitle}
-                    admin={project.createdBy['email']}
-                    bugs={project.bugs.length}
-                    createdAt={project.createdAt}
+                    project={project}
                     navigate={() => navigate(`/project/${project.id}`)}
-                    projectID={project.id}
                     key={project.id}
                     currentUser={currentUserEmail}
-                    members={members}
-                    setSelectedProjectMembers={setSelectedProjectMembers}
                     setModals={setModals}
-                    setSelectedProjectID={setSelectedProjectID}
+                    SelectedProject={projectRef}
                   />
                 );
               })
@@ -216,20 +232,3 @@ need to sync members email whit those setted on the modal*/
 };
 
 export default Home;
-
-export const FlexContainer = styled.div`
-  width: 100%;
-  padding: 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  min-width: 300px;
-  margin: 0 auto;
-
-  /*  min-height: 620px; */
-  /*  border: 2px solid #fff; */
-  /*  place-content: center; */
-  /*  grid-template-columns: repeat(auto-fill, minmax(350px, 1600px)); */
-  gap: 2rem;
-  max-width: 1100px;
-`;

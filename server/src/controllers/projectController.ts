@@ -117,11 +117,7 @@ export const updateMembers = async (req: Request, res: Response) => {
   try {
     const projectID = req.params.projectID;
     const { membersEmails } = req.body;
-    /* const projectOwnerEmail = await userService
-      .getUserByID(req.user.id)
-      .then((user) => user?.email);
- */
-    /* membersEmails.push(projectOwnerEmail); */
+    
 
     const membersArr = await userService.getUsersByEmails(membersEmails);
     const projectExists = await projectService.getProjectByID(projectID);

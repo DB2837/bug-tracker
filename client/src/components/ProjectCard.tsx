@@ -5,60 +5,51 @@ import React from 'react';
 import { Project, TModals } from '../types';
 
 type TProjectCardProps = {
-  title: string;
-  bugs: number;
-  admin: string;
-  createdAt: string;
-  projectID: string;
+  project: Project;
   currentUser: string;
-  members: any[];
   navigate: () => void;
-  setSelectedProjectMembers: React.Dispatch<React.SetStateAction<any[]>>;
+  SelectedProject: React.MutableRefObject<Project>;
   setModals: React.Dispatch<React.SetStateAction<TModals>>;
-  setSelectedProjectID: React.Dispatch<React.SetStateAction<string>>;
 };
 
 const ProjectCard = ({
-  title,
-  bugs,
-  admin,
-  createdAt,
-  projectID,
+  project,
   currentUser,
-  members,
   navigate,
   setModals,
-  setSelectedProjectID,
-  setSelectedProjectMembers,
+  SelectedProject,
 }: TProjectCardProps) => {
-  const isAdmin = admin === currentUser;
+  const isAdmin = project.createdBy['email'] === currentUser;
+
+  const handleIconsClick = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    SelectedProject.current = project;
+  };
 
   return (
     <Card onClick={navigate}>
-      <Title>{title}</Title>
+      <Title>{project.title}</Title>
       <Attribute>
-        admin: <Value>{admin}</Value>
+        admin: <Value>{project.createdBy['email']}</Value>
       </Attribute>
       <Attribute>
-        members: <Value>{members.length}</Value>
+        members: <Value>{project.members.length}</Value>
       </Attribute>
       <Attribute>
-        bugs: <Value>{bugs}</Value>
+        bugs: <Value>{project.bugs.length}</Value>
       </Attribute>
       <Attribute>
-        <Value> {createdAt}</Value>
+        <Value> {project.createdAt}</Value>
       </Attribute>
       {isAdmin && (
-        <IconsContainer onClick={(e) => e.stopPropagation()}>
+        <IconsContainer onClick={handleIconsClick}>
           <IoMdPersonAdd
             style={IconsStyle}
-            onClick={(e) => {
-              setSelectedProjectMembers(() => members);
+            onClick={() => {
               setModals((prevState) => ({
                 ...prevState,
                 addMembersModal: true,
               }));
-              setSelectedProjectID(() => projectID);
             }}
           />
           <FaPen
@@ -68,7 +59,6 @@ const ProjectCard = ({
                 ...prevState,
                 editTitleModal: true,
               }));
-              setSelectedProjectID(() => projectID);
             }}
           />
           <FaTrash
@@ -78,7 +68,6 @@ const ProjectCard = ({
                 ...prevState,
                 deleteModal: true,
               }));
-              setSelectedProjectID(() => projectID);
             }}
           />
         </IconsContainer>
@@ -96,8 +85,8 @@ const IconsStyle = {
 };
 
 const Card = styled.div`
-  min-height: 250px;
-  max-height: 270px;
+  min-height: 255px;
+  max-height: 290px;
   width: 300px;
   padding: 1.2rem;
   display: flex;

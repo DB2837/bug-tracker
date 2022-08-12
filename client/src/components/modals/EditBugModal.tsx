@@ -1,0 +1,188 @@
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import useCustomFetch from '../../hooks/useCustomFetch';
+import { updateBug } from '../../services/bug/updateBug';
+import { StyledButton } from '../../styles/StyledButton';
+import { Bug, Priority, TModals } from '../../types';
+import Loader from '../Loader';
+import ModalContainer from './ModalContainer';
+
+type TInputs = {
+  title: string;
+  description: string;
+};
+
+type TProps = {
+  prevTitle: string;
+  prevPriority: Priority;
+  prevDescription: string;
+  projectID: string;
+  bugID: string;
+  CRUDLoading: boolean;
+  setBug: React.Dispatch<React.SetStateAction<Bug>>;
+  setModals: React.Dispatch<React.SetStateAction<TModals>>;
+  setCRUDloading: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+const EditBugModal = ({
+  setModals,
+  setBug,
+  setCRUDloading,
+  CRUDLoading,
+  projectID,
+  bugID,
+  prevTitle,
+  prevPriority,
+  prevDescription,
+}: TProps) => {
+  const _fetch = useCustomFetch();
+  const [inputValue, setInputValue] = useState<TInputs>(() => ({
+    title: prevTitle,
+    description: prevDescription,
+  }));
+
+  const [priority, setPriority] = useState<Priority>(prevPriority);
+
+  const handleInputsChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setInputValue((prevState) => ({
+      ...prevState,
+      [event.target.name]: event.target.value,
+    }));
+  };
+
+  const handleRadioButtonChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setPriority(() => event.target.value as Priority);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setCRUDloading(true);
+      const response = await updateBug(
+        _fetch,
+        projectID,
+        bugID,
+        inputValue.title,
+        inputValue.description,
+        priority
+      );
+
+      if (response?.status === 200) {
+        const updatedBug = await response.json();
+        setBug(() => updatedBug);
+        setModals((prevState) => ({ ...prevState, editBugModal: false }));
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setCRUDloading(false);
+    }
+  };
+
+  return (
+    <ModalContainer setModals={setModals}>
+      <Div>
+        {CRUDLoading && <Loader />}
+        <h3>edit bug</h3>
+      </Div>
+      <Div>
+        <StyledInput
+          name='title'
+          placeholder='Title...'
+          onChange={handleInputsChange}
+          value={inputValue.title}
+          required
+        />
+      </Div>
+
+      <InputRadioContainer onChange={handleRadioButtonChange}>
+        <div>
+          <input
+            type='radio'
+            value={Priority.low}
+            name='priority'
+            defaultChecked={priority === Priority.low}
+          />{' '}
+          Low
+        </div>
+        <div>
+          {' '}
+          <input
+            type='radio'
+            value={Priority.medium}
+            name='priority'
+            defaultChecked={priority === Priority.medium}
+          />{' '}
+          Medium
+        </div>
+        <div>
+          {' '}
+          <input
+            type='radio'
+            value={Priority.high}
+            name='priority'
+            defaultChecked={priority === Priority.high}
+          />{' '}
+          High
+        </div>
+      </InputRadioContainer>
+
+      <Div>
+        <StyledTextArea
+          name='description'
+          placeholder='Description...'
+          onChange={handleInputsChange}
+          value={inputValue.description}
+          required
+        />
+      </Div>
+      <StyledButton onClick={handleSubmit}>edit Bug</StyledButton>
+    </ModalContainer>
+  );
+};
+
+export default EditBugModal;
+
+const Div = styled.div`
+  display: flex;
+  position: relative;
+  /*  justify-content: space-between; */
+  padding: 1rem;
+`;
+
+const InputRadioContainer = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem;
+`;
+
+const StyledTextArea = styled.textarea`
+  background-color: inherit;
+  color: #fff;
+  font-size: 1rem;
+  min-width: 280px;
+  min-height: 145px;
+
+  ::placeholder {
+    color: #fff;
+  }
+`;
+
+const StyledInput = styled.input`
+  width: 100%;
+  padding: 10px 0;
+  color: #fff;
+  margin-bottom: 25px;
+  border: none;
+  border-bottom: 1px solid #ffffff;
+  outline: none;
+  background-color: inherit;
+  font-size: 1rem;
+  ::placeholder {
+    color: #fff;
+  }
+`;

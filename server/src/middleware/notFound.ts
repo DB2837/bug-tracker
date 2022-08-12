@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
 
-export const notFound = (_req: Request, res: Response): void => {
-  res.status(404).send({ message: 'Unknown endpoint.' });
+export const notFound = (
+  _req: Request,
+  res: Response
+  /*  next: NextFunction */
+) => {
+  return res.status(404).send({ message: 'Unknown endpoint.' });
 };
