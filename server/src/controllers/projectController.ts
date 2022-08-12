@@ -117,7 +117,6 @@ export const updateMembers = async (req: Request, res: Response) => {
   try {
     const projectID = req.params.projectID;
     const { membersEmails } = req.body;
-    
 
     const membersArr = await userService.getUsersByEmails(membersEmails);
     const projectExists = await projectService.getProjectByID(projectID);
@@ -159,7 +158,6 @@ export const updateMembers = async (req: Request, res: Response) => {
 
 export const updateProjectTitle = async (req: Request, res: Response) => {
   try {
-    //req.user.id to validate the request
     const projectID = req.params.projectID;
     const projectExists = await projectService.getProjectByID(projectID);
 
